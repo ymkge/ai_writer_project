@@ -1,11 +1,7 @@
 {
   "summarize": {
     "model": "gemini-2.5-flash",
-    "prompt_template": "以下の文章を簡潔に要約してください。
-
----
-{text}
----",
+    "prompt_template": "以下の文章を簡潔に要約してください。\n\n---\n{text}\n---",
     "generation_config": {
       "temperature": 0.7,
       "top_p": 1,
@@ -14,22 +10,7 @@
   },
   "proofread": {
     "model": "gemini-2.5-flash",
-    "prompt_template": "あなたはプロの編集者です。以下の文章を校正し、修正点を指摘してください。
-修正点が見つかった場合は、以下のJSON形式のリストで回答してください。修正がない場合は空のリスト `[]` を返してください。
-
-形式:
-[
-  {
-    "original": "修正前の単語やフレーズ",
-    "corrected": "修正後の単語やフレーズ",
-    "reason": "修正理由を簡潔に説明"
-  }
-]
-
-文章:
----
-{text}
----",
+    "prompt_template": "あなたはプロの編集者です。以下の文章を校正し、修正点を指摘してください。\n修正点が見つかった場合は、以下のJSON形式のリストで回答してください。修正がない場合は空のリスト `[]` を返してください。\n\n形式:\n[\n  {{\n    \"original\": \"修正前の単語やフレーズ\",\n    \"corrected\": \"修正後の単語やフレーズ\",\n    \"reason\": \"修正理由を簡潔に説明\"\n  }}\n]\n\n文章:\n---\n{text}\n---",
     "generation_config": {
       "response_mime_type": "application/json",
       "temperature": 0.2
