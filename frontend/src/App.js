@@ -1,8 +1,40 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import './App.css';
+import {
+    AppBar,
+    Button,
+    Card,
+    CardContent,
+    CircularProgress,
+    Container,
+    CssBaseline,
+    Grid,
+    IconButton,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    TextField,
+    ThemeProvider,
+    ToggleButton,
+    ToggleButtonGroup,
+    Toolbar,
+    Typography,
+    createTheme
+} from '@mui/material';
+import { AutoFixHigh, GitHub } from '@mui/icons-material';
 
 const API_BASE_URL = 'http://localhost:8000';
+
+// ダークテーマの定義
+const darkTheme = createTheme({
+    palette: {
+        mode: 'dark',
+    },
+});
 
 function App() {
     const [text, setText] = useState('');
@@ -10,6 +42,12 @@ function App() {
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    const handleModeChange = (event, newMode) => {
+        if (newMode !== null) {
+            setMode(newMode);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -31,48 +69,49 @@ function App() {
     const renderResult = () => {
         if (loading) {
             return (
-                <div className="d-flex justify-content-center align-items-center h-100">
-                    <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                    </div>
-                </div>
+                <Grid container justifyContent="center" alignItems="center" sx={{ height: '100%' }}>
+                    <CircularProgress />
+                </Grid>
             );
         }
 
         if (error) {
-            return <div className="alert alert-danger">{error}</div>;
+            return <Typography color="error">{error}</Typography>;
         }
 
         if (!result) {
-            return <p className="text-muted">ここに結果が表示されます。</p>;
+            return <Typography variant="body2" color="text.secondary">ここに結果が表示されます。</Typography>;
         }
 
         if (mode === 'summarize') {
-            return <p>{result.summary}</p>;
+            return <Typography variant="body1">{result.summary}</Typography>;
         }
 
         if (mode === 'proofread' && result.corrections) {
+            if (result.corrections.length === 0) {
+                return <Typography variant="body1">修正点は見つかりませんでした。</Typography>;
+            }
             return (
-                <div className="table-responsive">
-                    <table className="table table-bordered table-hover">
-                        <thead className="table-light">
-                            <tr>
-                                <th scope="col">修正前</th>
-                                <th scope="col">修正後</th>
-                                <th scope="col">理由</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                <TableContainer component={Paper}>
+                    <Table sx={{ minWidth: 650 }} aria-label="simple table">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>修正前</TableCell>
+                                <TableCell>修正後</TableCell>
+                                <TableCell>理由</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
                             {result.corrections.map((item, index) => (
-                                <tr key={index}>
-                                    <td>{item.original}</td>
-                                    <td>{item.corrected}</td>
-                                    <td>{item.reason}</td>
-                                </tr>
+                                <TableRow key={index}>
+                                    <TableCell component="th" scope="row">{item.original}</TableCell>
+                                    <TableCell>{item.corrected}</TableCell>
+                                    <TableCell>{item.reason}</TableCell>
+                                </TableRow>
                             ))}
-                        </tbody>
-                    </table>
-                </div>
+                        </TableBody>
+                    </Table>
+                </TableContainer>
             );
         }
 
@@ -80,59 +119,72 @@ function App() {
     };
 
     return (
-        <div className="container py-5">
-            <header className="text-center mb-5">
-                <h1 className="display-4">AIライティング支援ツール</h1>
-                <p className="lead text-muted">文章の要約と校正をサポートします</p>
-            </header>
-
-            <div className="row">
-                <div className="col-lg-6 mb-4 mb-lg-0">
-                    <div className="card h-100">
-                        <div className="card-body">
+        <ThemeProvider theme={darkTheme}>
+            <CssBaseline />
+            <AppBar position="static">
+                <Toolbar>
+                    <AutoFixHigh sx={{ mr: 2 }} />
+                    <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                        AIライティング支援ツール
+                    </Typography>
+                    <IconButton color="inherit" href="https://github.com/your-github/ai_writer_project" target="_blank">
+                        <GitHub />
+                    </IconButton>
+                </Toolbar>
+            </AppBar>
+            <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+                <Grid container spacing={4}>
+                    {/* 左側の入力エリア */}
+                    <Grid item xs={12} md={6}>
+                        <Paper elevation={3} sx={{ p: 3, height: '100%' }}>
+                            <Typography variant="h5" gutterBottom>テキスト入力</Typography>
                             <form onSubmit={handleSubmit}>
-                                <div className="mb-3">
-                                    <div className="btn-group w-100" role="group">
-                                        <input type="radio" className="btn-check" name="mode" id="summarize" autoComplete="off" checked={mode === 'summarize'} onChange={() => setMode('summarize')} />
-                                        <label className="btn btn-outline-primary" htmlFor="summarize">要約</label>
-
-                                        <input type="radio" className="btn-check" name="mode" id="proofread" autoComplete="off" checked={mode === 'proofread'} onChange={() => setMode('proofread')} />
-                                        <label className="btn btn-outline-primary" htmlFor="proofread">校正</label>
-                                    </div>
-                                </div>
-                                <div className="mb-3">
-                                    <textarea
-                                        className="form-control"
-                                        rows="15"
-                                        value={text}
-                                        onChange={(e) => setText(e.target.value)}
-                                        placeholder={mode === 'summarize' ? 'ここに要約したい文章を入力してください...' : 'ここに校正したい文章を入力してください...'}
-                                        required
-                                    />
-                                </div>
-                                <div className="d-grid">
-                                    <button type="submit" className="btn btn-primary btn-lg" disabled={loading || !text.trim()}>
-                                        {loading ? '処理中...' : '実行'}
-                                    </button>
-                                </div>
+                                <ToggleButtonGroup
+                                    color="primary"
+                                    value={mode}
+                                    exclusive
+                                    onChange={handleModeChange}
+                                    fullWidth
+                                    sx={{ mb: 2 }}
+                                >
+                                    <ToggleButton value="summarize">要約</ToggleButton>
+                                    <ToggleButton value="proofread">校正</ToggleButton>
+                                </ToggleButtonGroup>
+                                <TextField
+                                    multiline
+                                    rows={15}
+                                    fullWidth
+                                    variant="outlined"
+                                    value={text}
+                                    onChange={(e) => setText(e.target.value)}
+                                    placeholder={mode === 'summarize' ? 'ここに要約したい文章を入力してください...' : 'ここに校正したい文章を入力してください...'}
+                                    required
+                                    sx={{ mb: 2 }}
+                                />
+                                <Button
+                                    type="submit"
+                                    variant="contained"
+                                    size="large"
+                                    fullWidth
+                                    disabled={loading || !text.trim()}
+                                    startIcon={loading ? <CircularProgress size={24} color="inherit" /> : <AutoFixHigh />}
+                                >
+                                    {loading ? '処理中...' : '実行'}
+                                </Button>
                             </form>
-                        </div>
-                    </div>
-                </div>
-                <div className="col-lg-6">
-                    <div className="card h-100 result-card">
-                        <div className="card-body">
-                            <h5 className="card-title mb-3">結果</h5>
-                            {renderResult()}
-                        </div>
-                    </div>
-                </div>
-            </div>
+                        </Paper>
+                    </Grid>
 
-            <footer className="text-center text-muted mt-5">
-                <p>&copy; 2024 AI Writing Assistant</p>
-            </footer>
-        </div>
+                    {/* 右側の結果エリア */}
+                    <Grid item xs={12} md={6}>
+                        <Paper elevation={3} sx={{ p: 3, height: '100%', minHeight: '400px' }}>
+                            <Typography variant="h5" gutterBottom>結果</Typography>
+                            {renderResult()}
+                        </Paper>
+                    </Grid>
+                </Grid>
+            </Container>
+        </ThemeProvider>
     );
 }
 
