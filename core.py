@@ -10,21 +10,8 @@ if not api_key:
     raise ValueError("GEMINI_API_KEY not found in environment variables.")
 genai.configure(api_key=api_key)
 
-# --- Function Callingの定義 (校正機能で利用) ---
-def summarize_text(summary: str):
-    """Provided text's summary."""
-    return {"summary": summary}
-
-def propose_corrections(corrections: list[dict]):
-    """Proposes corrections for a text."""
-    return {"corrections": corrections}
-
-tools = [summarize_text, propose_corrections]
-
 # --- モデルの定義 ---
-# 要約用のモデル
-summarization_model = genai.GenerativeModel(model_name="gemini-2.5-flash")
-# proofreading_model = genai.GenerativeModel(model_name="gemini-1.5-pro-latest", tools=tools) # 校正機能も後で実装予定
+model = genai.GenerativeModel(model_name="gemini-2.5-flash")
 
 # --- ビジネスロジック ---
 
@@ -32,15 +19,17 @@ def execute_summarization(text: str) -> Dict[str, Any]:
     """
     テキストを受け取り、Gemini APIを使って要約を実行する。
     """
-    prompt = f"以下の文章を簡潔に要約してください。\n\n---\n{text}\n---"
+    prompt = f"""以下の文章を簡潔に要約してください。
+
+---
+{text}
+---"""
     
     try:
-        response = summarization_model.generate_content(prompt)
+        response = model.generate_content(prompt)
         summary = response.text
     except Exception as e:
-        # ここでAPIエラーのハンドリングを行う
-        # 例: ロギング、デフォルトのメッセージを返すなど
-        print(f"An error occurred: {e}")
+        print(f"An error occurred during summarization: {e}")
         return {"summary": "要約の生成中にエラーが発生しました。"}
 
     return {"summary": summary}
@@ -50,10 +39,40 @@ def execute_proofreading(text: str) -> Dict[str, Any]:
     """
     テキストを受け取り、Gemini APIを使って校正を実行する。
     """
-    # ダミーの応答 (今回は変更なし)
-    corrections = [
-        {"original": "この文章は誤字があります。", "corrected": "この文章には誤字があります。", "reason": "助詞「は」が抜けていました。"},
-        {"original": "不自然な表現だと思います", "corrected": "不自然な表現だと思われます。", "reason": "より丁寧な、断定を避ける表現に修正しました。"},
-        {"original": "ユーザーに取って使いやすい。", "corrected": "ユーザーにとって使いやすい。", "reason": "誤字を修正しました。"}
-    ]
+    prompt = f"""
+あなたはプロの編集者です。以下の文章を校正し、修正点を指摘してください。
+修正点が見つかった場合は、以下のJSON形式のリストで回答してください。修正がない場合は空のリスト `[]` を返してください。
+
+形式:
+[
+  {{
+    "original": "修正前の単語やフレーズ",
+    "corrected": "修正後の単語やフレーズ",
+    "reason": "修正理由を簡潔に説明"
+  }}
+]
+
+文章:
+---
+{text}
+---
+"""
+    
+    try:
+        # API呼び出し時にJSONモードを指定
+        response = model.generate_content(
+            prompt,
+            generation_config={"response_mime_type": "application/json"}
+        )
+        
+        corrections = json.loads(response.text)
+        
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON from API response: {e}")
+        # フロントエンドが空のリストを期待している可能性を考慮
+        return {"corrections": []}
+    except Exception as e:
+        print(f"An error occurred during proofreading: {e}")
+        return {"corrections": []}
+
     return {"corrections": corrections}
