@@ -2,6 +2,10 @@ import google.generativeai as genai
 import json
 import os
 from typing import List, Dict, Any
+from dotenv import load_dotenv
+
+# .envファイルから環境変数を読み込む
+load_dotenv()
 
 # --- Gemini APIのセットアップ ---
 # 環境変数からAPIキーを読み込む
@@ -39,8 +43,7 @@ def execute_proofreading(text: str) -> Dict[str, Any]:
     """
     テキストを受け取り、Gemini APIを使って校正を実行する。
     """
-    prompt = f"""
-あなたはプロの編集者です。以下の文章を校正し、修正点を指摘してください。
+    prompt = f"""あなたはプロの編集者です。以下の文章を校正し、修正点を指摘してください。
 修正点が見つかった場合は、以下のJSON形式のリストで回答してください。修正がない場合は空のリスト `[]` を返してください。
 
 形式:
@@ -76,3 +79,4 @@ def execute_proofreading(text: str) -> Dict[str, Any]:
         return {"corrections": []}
 
     return {"corrections": corrections}
+
