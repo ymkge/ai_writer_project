@@ -1,4 +1,5 @@
 # AIライティング支援ツール
+<img width="1707" height="699" alt="スクリーンショット 2025-08-28 21 38 52" src="https://github.com/user-attachments/assets/07f00217-2bbd-40c3-bdf0-f0ba0e49bc2f" />
 
 Gemini APIを活用して、文章の要約と校正を行うWebアプリケーションです。
 
