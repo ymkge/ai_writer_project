@@ -4,7 +4,7 @@ from typing import List, Dict, Any
 from fastapi.middleware.cors import CORSMiddleware
 
 # コアロジックをインポート
-from core import execute_summarization, execute_proofreading
+from core import execute_summarization, execute_proofreading, save_summary_to_csv, save_proofreading_to_csv
 
 app = FastAPI(
     title="AI Writing Assistant API",
@@ -52,6 +52,7 @@ def summarize_endpoint(payload: TextInput):
     受け取ったテキストを要約します。
     """
     result = execute_summarization(payload.text)
+    save_summary_to_csv(payload.text, result["summary"])
     return result
 
 @app.post("/proofread", response_model=ProofreadResponse)
@@ -60,6 +61,7 @@ def proofread_endpoint(payload: TextInput):
     受け取ったテキストを校正し、修正案を返します。
     """
     result = execute_proofreading(payload.text)
+    save_proofreading_to_csv(payload.text, result["corrections"])
     return result
 
 @app.get("/", include_in_schema=False)
