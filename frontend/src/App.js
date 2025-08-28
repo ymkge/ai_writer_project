@@ -77,8 +77,11 @@ function App() {
             filename = 'summary.csv';
         } else if (type === 'proofread') {
             csvContent = 'Original Text,Original Phrase,Corrected Phrase,Reason\n';
+            let isFirstCorrection = true; // Flag to track the first correction
             data.corrections.forEach(item => {
-                csvContent += `"${text.replace(/"/g, '""')}","${item.original.replace(/"/g, '""')}","${item.corrected.replace(/"/g, '""')}","${item.reason.replace(/"/g, '""')}"\n`;
+                const originalTextForCsv = isFirstCorrection ? text.replace(/"/g, '""') : ''; // Only include original text for the first correction
+                csvContent += `"${originalTextForCsv}","${item.original.replace(/"/g, '""')}","${item.corrected.replace(/"/g, '""')}","${item.reason.replace(/"/g, '""')}"\n`;
+                isFirstCorrection = false; // Set to false after the first correction
             });
             filename = 'proofreading.csv';
         }
