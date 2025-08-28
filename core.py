@@ -69,7 +69,6 @@ def execute_proofreading(text: str) -> Dict[str, Any]:
         )
         
         raw_response_text = response.text
-        print(f"--- Raw Proofreading Response ---\n{raw_response_text}\n---------------------------------")
 
         # AIの応答からJSON部分を抽出する
         match = re.search(r"```(json)?\n?([\s\S]*?)\n?```", raw_response_text)
@@ -85,7 +84,6 @@ def execute_proofreading(text: str) -> Dict[str, Any]:
         return {"corrections": []}
     except json.JSONDecodeError as e:
         print(f"Error decoding JSON from API response: {e}")
-        print(f"Attempted to parse: {json_str}")
         return {"corrections": []}
     except Exception as e:
         print(f"An error occurred during proofreading: {e}")

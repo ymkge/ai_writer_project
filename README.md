@@ -29,9 +29,40 @@ Gemini APIを活用して、文章の要約と校正を行うWebアプリケー�
     ├── src/
     ├── public/
     └── package.json
+## ⚙️ 設定ファイル
+
+AIモデルの挙動（プロンプト、モデル名、生成パラメータなど）は、`prompt_config.json`ファイルで設定できます。
+
+- `prompt_config.json`: 要約機能と校正機能のプロンプトテンプレート、使用するGeminiモデル、および`temperature`などの生成パラメータが定義されています。このファイルを編集することで、AIの応答を柔軟に調整できます。
+
+**例:** `prompt_config.json`の一部
+
+```json
+{
+  "summarize": {
+    "model": "gemini-2.5-flash",
+    "prompt_template": "以下の文章を簡潔に要約してください。\n\n---\n{text}\n---",
+    "generation_config": {
+      "temperature": 0.7,
+      "top_p": 1,
+      "max_output_tokens": 2048
+    }
+  },
+  "proofread": {
+    "model": "gemini-2.5-flash",
+    "prompt_template": "あなたはプロの編集者です。以下の文章を校正し、修正点を指摘してください。\n...",
+    "generation_config": {
+      "response_mime_type": "application/json",
+      "temperature": 0.2
+    }
+  }
+}
 ```
 
+**注意:** `prompt_config.json`を変更した際は、変更を反映させるためにFastAPIサーバーを再起動してください。
+
 ## 🚀 セットアップと実行方法
+
 
 ### 前提条件
 
