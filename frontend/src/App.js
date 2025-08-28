@@ -25,7 +25,7 @@ import {
     Typography,
     createTheme
 } from '@mui/material';
-import { AutoFixHigh, GitHub } from '@mui/icons-material';
+import { AutoFixHigh, GitHub, Download } from '@mui/icons-material'; // Added Download icon
 
 const API_BASE_URL = 'http://localhost:8000';
 
@@ -66,6 +66,36 @@ function App() {
         }
     };
 
+    // Function to generate and download CSV
+    const handleDownloadCsv = (data, type) => {
+        let csvContent = '';
+        let filename = '';
+
+        if (type === 'summarize') {
+            csvContent = 'Original Text,Summary\n';
+            csvContent += `"${text.replace(/"/g, '""')}","${data.summary.replace(/"/g, '""')}"\n`;
+            filename = 'summary.csv';
+        } else if (type === 'proofread') {
+            csvContent = 'Original Text,Original Phrase,Corrected Phrase,Reason\n';
+            data.corrections.forEach(item => {
+                csvContent += `"${text.replace(/"/g, '""')}","${item.original.replace(/"/g, '""')}","${item.corrected.replace(/"/g, '""')}","${item.reason.replace(/"/g, '""')}"\n`;
+            });
+            filename = 'proofreading.csv';
+        }
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        if (link.download !== undefined) { // Feature detection for download attribute
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    };
+
     const renderResult = () => {
         if (loading) {
             return (
@@ -83,39 +113,61 @@ function App() {
             return <Typography variant="body2" color="text.secondary">ここに結果が表示されます。</Typography>;
         }
 
-        if (mode === 'summarize') {
-            return <Typography variant="body1">{result.summary}</Typography>;
-        }
+        // Display result and download button
+        return (
+            <>
+                {mode === 'summarize' && (
+                    <>
+                        <Typography variant="body1">{result.summary}</Typography>
+                        <Button
+                            variant="contained"
+                            startIcon={<Download />}
+                            sx={{ mt: 2 }}
+                            onClick={() => handleDownloadCsv(result, 'summarize')}
+                        >
+                            要約結果をCSVでダウンロード
+                        </Button>
+                    </>
+                )}
 
-        if (mode === 'proofread' && result.corrections) {
-            if (result.corrections.length === 0) {
-                return <Typography variant="body1">修正点は見つかりませんでした。</Typography>;
-            }
-            return (
-                <TableContainer component={Paper}>
-                    <Table sx={{ minWidth: 650 }} aria-label="simple table">
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>修正前</TableCell>
-                                <TableCell>修正後</TableCell>
-                                <TableCell>理由</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {result.corrections.map((item, index) => (
-                                <TableRow key={index}>
-                                    <TableCell component="th" scope="row">{item.original}</TableCell>
-                                    <TableCell>{item.corrected}</TableCell>
-                                    <TableCell>{item.reason}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            );
-        }
-
-        return null;
+                {mode === 'proofread' && result.corrections && (
+                    <>
+                        {result.corrections.length === 0 ? (
+                            <Typography variant="body1">修正点は見つかりませんでした。</Typography>
+                        ) : (
+                            <TableContainer component={Paper}>
+                                <Table sx={{ minWidth: 650 }} aria-label="simple table">
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>修正前</TableCell>
+                                            <TableCell>修正後</TableCell>
+                                            <TableCell>理由</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {result.corrections.map((item, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell component="th" scope="row">{item.original}</TableCell>
+                                                <TableCell>{item.corrected}</TableCell>
+                                                <TableCell>{item.reason}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        )}
+                        <Button
+                            variant="contained"
+                            startIcon={<Download />}
+                            sx={{ mt: 2 }}
+                            onClick={() => handleDownloadCsv(result, 'proofread')}
+                        >
+                            校正結果をCSVでダウンロード
+                        </Button>
+                    </>
+                )}
+            </>
+        );
     };
 
     return (

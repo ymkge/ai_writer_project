@@ -3,6 +3,7 @@ import json
 import os
 import re
 import csv
+import io
 from typing import Dict, Any, List
 from dotenv import load_dotenv
 
@@ -25,48 +26,34 @@ if not api_key:
     raise ValueError("GEMINI_API_KEY not found in environment variables.")
 genai.configure(api_key=api_key)
 
-# --- 結果保存ディレクトリの設定 ---
-RESULTS_DIR = "results"
-os.makedirs(RESULTS_DIR, exist_ok=True)
-
-# --- CSV保存関数 ---
-def save_summary_to_csv(original_text: str, summary: str):
-    file_path = os.path.join(RESULTS_DIR, "summaries.csv")
+# --- CSV文字列生成関数 ---
+def generate_summary_csv_string(original_text: str, summary: str) -> str:
+    output = io.StringIO()
     fieldnames = ["Original Text", "Summary"]
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
     
-    file_exists = os.path.exists(file_path)
+    writer.writeheader()
+    writer.writerow({"Original Text": original_text, "Summary": summary})
     
-    with open(file_path, 'a', newline='', encoding='utf-8') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        
-        if not file_exists:
-            writer.writeheader() # Write header only if file is new
-            
-        writer.writerow({"Original Text": original_text, "Summary": summary})
-    print(f"Summary saved to {file_path}")
+    return output.getvalue()
 
-def save_proofreading_to_csv(original_text: str, corrections: List[Dict[str, str]]):
-    file_path = os.path.join(RESULTS_DIR, "proofreadings.csv")
+def generate_proofreading_csv_string(original_text: str, corrections: List[Dict[str, str]]) -> str:
+    output = io.StringIO()
     fieldnames = ["Original Text", "Original Phrase", "Corrected Phrase", "Reason"]
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
     
-    file_exists = os.path.exists(file_path)
+    writer.writeheader()
     
-    with open(file_path, 'a', newline='', encoding='utf-8') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    for correction in corrections:
+        row = {
+            "Original Text": original_text,
+            "Original Phrase": correction.get("original", ""),
+            "Corrected Phrase": correction.get("corrected", ""),
+            "Reason": correction.get("reason", "")
+        }
+        writer.writerow(row)
         
-        if not file_exists:
-            writer.writeheader() # Write header only if file is new
-            
-        # Write each correction as a separate row, linking to the original text
-        for correction in corrections:
-            row = {
-                "Original Text": original_text,
-                "Original Phrase": correction.get("original", ""),
-                "Corrected Phrase": correction.get("corrected", ""),
-                "Reason": correction.get("reason", "")
-            }
-            writer.writerow(row)
-    print(f"Proofreading results saved to {file_path}")
+    return output.getvalue()
 
 
 # --- ビジネスロジック ---
