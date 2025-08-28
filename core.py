@@ -1,6 +1,7 @@
 import google.generativeai as genai
 import json
 import os
+import re
 from typing import Dict, Any
 from dotenv import load_dotenv
 
@@ -56,6 +57,7 @@ def execute_proofreading(text: str) -> Dict[str, Any]:
     テキストを受け取り、Gemini APIを使って校正を実行する。
     設定は prompt_config.json から読み込む。
     """
+    json_str = ""
     try:
         conf = config['proofread']
         model = genai.GenerativeModel(model_name=conf['model'])
@@ -66,13 +68,24 @@ def execute_proofreading(text: str) -> Dict[str, Any]:
             generation_config=conf['generation_config']
         )
         
-        corrections = json.loads(response.text)
+        raw_response_text = response.text
+        print(f"--- Raw Proofreading Response ---\n{raw_response_text}\n---------------------------------")
+
+        # AIの応答からJSON部分を抽出する
+        match = re.search(r"```(json)?\n?([\s\S]*?)\n?```", raw_response_text)
+        if match:
+            json_str = match.group(2)
+        else:
+            json_str = raw_response_text
+
+        corrections = json.loads(json_str)
         
     except KeyError as e:
         print(f"Configuration error: Missing key {e} in 'proofread' config.")
         return {"corrections": []}
     except json.JSONDecodeError as e:
         print(f"Error decoding JSON from API response: {e}")
+        print(f"Attempted to parse: {json_str}")
         return {"corrections": []}
     except Exception as e:
         print(f"An error occurred during proofreading: {e}")
